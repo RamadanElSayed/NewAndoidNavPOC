@@ -1,3 +1,4 @@
+// File 1: Imports.kt - All imports
 package com.ramadan.newandoidnavpoc
 
 import android.os.Bundle
@@ -68,6 +69,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -93,16 +95,30 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-
-
-// Main Page Indices for HorizontalPager
-object PageIndex {
-    const val INSIGHTS = 0
-    const val HOME = 1
-    const val PROFILE = 2
+// File 2: MainActivity.kt
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            AppTheme {
+                TwoLayerNavigationApp()
+            }
+        }
+    }
 }
 
-// Navigation Events - Only for screen navigation within each page
+@Composable
+fun AppTheme(content: @Composable () -> Unit) {
+    val colorScheme = if (isSystemInDarkTheme()) {
+        darkColorScheme(primary = Color(0xFF6B46C1))
+    } else {
+        lightColorScheme(primary = Color(0xFF6B46C1))
+    }
+    MaterialTheme(colorScheme = colorScheme, content = content)
+}
+
+// File 3: DataModels.kt
 sealed class NavigationEvent {
     data object Home : NavigationEvent()
     data object Transactions : NavigationEvent()
@@ -112,19 +128,11 @@ sealed class NavigationEvent {
     data object Back : NavigationEvent()
 }
 
-// Top Bar Events - Separate from navigation
-sealed class TopBarEvent {
-    data object RightIconClicked : TopBarEvent()
-    data object LeftIconClicked : TopBarEvent()
-    data object TitleClicked : TopBarEvent()
-}
-
-// Screen Theme Configuration
 enum class ScreenTheme {
-    TRANSPARENT,  // Transparent container to show Msa3ed
-    WHITE,        // Solid white background
-    LIGHT_GRAY,   // Light gray background
-    DARK          // Dark background
+    TRANSPARENT,
+    WHITE,
+    LIGHT_GRAY,
+    DARK
 }
 
 data class ScreenConfiguration(
@@ -135,7 +143,6 @@ data class ScreenConfiguration(
     val rightIcon: String = ""
 )
 
-// Navigation State
 data class NavigationState(
     val currentEvent: NavigationEvent? = null,
     val screenConfig: ScreenConfiguration = ScreenConfiguration(),
@@ -143,21 +150,24 @@ data class NavigationState(
     val onNavigate: (NavigationEvent) -> Unit = {}
 )
 
-// Top Bar State
+sealed class TopBarEvent {
+    data object RightIconClicked : TopBarEvent()
+    data object LeftIconClicked : TopBarEvent()
+    data object TitleClicked : TopBarEvent()
+}
+
 data class TopBarState(
     val currentEvent: TopBarEvent? = null,
     val onEventHandled: () -> Unit = {},
     val onTriggerEvent: (TopBarEvent) -> Unit = {}
 )
 
-// Main App State
-data class AppState(
+data class PagerScreenState(
     val currentPage: Int = PageIndex.HOME,
-    val isSwipeEnabled: Boolean = true,
-    val pagerState: PagerState
+    val onPageChange: (Int) -> Unit = {},
+    val onBackToHome: () -> Unit = {}
 )
 
-// CompositionLocal declarations
 val LocalNavigationState = compositionLocalOf<NavigationState> {
     error("NavigationState not provided")
 }
@@ -166,11 +176,78 @@ val LocalTopBarState = compositionLocalOf<TopBarState> {
     error("TopBarState not provided")
 }
 
-val LocalAppState = compositionLocalOf<AppState> {
-    error("AppState not provided")
+val LocalPagerScreenState = compositionLocalOf<PagerScreenState?> {
+    null
 }
 
-// Top Bar Event Extensions
+object Routes {
+    const val HOME = "home"
+    const val TRANSACTIONS = "transactions"
+    const val ACCOUNTS = "accounts"
+    const val INSIGHTS = "insights"
+    const val PROFILE = "profile"
+}
+
+object PageIndex {
+    const val INSIGHTS = 0
+    const val HOME = 1
+    const val PROFILE = 2
+}
+
+data class TransactionData(
+    val title: String,
+    val subtitle: String,
+    val amount: String = "",
+    val type: String = "default"
+)
+
+data class AccountData(
+    val name: String,
+    val description: String,
+    val balance: String
+)
+
+data class ProfileMenuItem(
+    val title: String,
+    val subtitle: String = "",
+    val icon: String,
+    val color: Color
+)
+
+val sampleTransactions = listOf(
+    TransactionData("Salary Deposit", "Today, 10:30 AM", "+3,500.00", "income"),
+    TransactionData("Grocery Store", "Yesterday, 6:45 PM", "-127.50", "food"),
+    TransactionData("Netflix", "Dec 23, 2024", "-14.99", "entertainment"),
+    TransactionData("Gas Station", "Dec 22, 2024", "-45.20", "transport"),
+    TransactionData("Dividend", "Dec 21, 2024", "+250.00", "investment"),
+    TransactionData("Restaurant", "Dec 20, 2024", "-89.75", "food"),
+    TransactionData("Amazon", "Dec 19, 2024", "-156.30", "shopping"),
+    TransactionData("Freelance", "Dec 18, 2024", "+800.00", "income"),
+    TransactionData("Electric Bill", "Dec 17, 2024", "-78.90", "utilities"),
+    TransactionData("Coffee", "Dec 16, 2024", "-12.45", "food"),
+    TransactionData("Transfer", "Dec 15, 2024", "-200.00", "transfer"),
+    TransactionData("Refund", "Dec 14, 2024", "+45.99", "refund")
+)
+
+val sampleAccounts = listOf(
+    AccountData("Current Account", "Primary checking", "4,256.78"),
+    AccountData("Savings Account", "High-yield savings", "12,450.00"),
+    AccountData("Investment", "Portfolio", "28,975.50"),
+    AccountData("Credit Card", "Monthly expenses", "-1,234.56"),
+    AccountData("Business", "Operations", "5,678.90"),
+    AccountData("Emergency", "Reserves", "8,500.00")
+)
+
+fun getProfileMenuItems(): List<ProfileMenuItem> = listOf(
+    ProfileMenuItem("Personal Information", "Name, email, phone", "👤", Color(0xFF6B46C1)),
+    ProfileMenuItem("Account Preferences", "Language, currency", "⚙", Color(0xFF059669)),
+    ProfileMenuItem("Privacy Settings", "Data usage, permissions", "🔒", Color(0xFFEA580C)),
+    ProfileMenuItem("Notification Settings", "Alerts and updates", "🔔", Color(0xFFDC2626)),
+    ProfileMenuItem("Linked Devices", "Manage your devices", "📱", Color(0xFF7C2D12)),
+    ProfileMenuItem("Backup & Sync", "Data backup options", "☁", Color(0xFF4F46E5))
+)
+
+// File 4: TopBarExtensions.kt
 @Composable
 fun TopBarState.onRightIconClick(action: () -> Unit) {
     LaunchedEffect(this.currentEvent) {
@@ -219,144 +296,9 @@ fun TopBarState.handleEvents(
         }
     }
 }
-
-// Routes
-object Routes {
-    const val HOME = "home"
-    const val TRANSACTIONS = "transactions"
-    const val ACCOUNTS = "accounts"
-    const val INSIGHTS = "insights"
-    const val PROFILE = "profile"
-}
-
-// Data Models
-data class TransactionData(
-    val title: String,
-    val subtitle: String,
-    val amount: String = "",
-    val type: String = "default"
-)
-
-data class AccountData(
-    val name: String,
-    val description: String,
-    val balance: String
-)
-
-data class ProfileMenuItem(
-    val title: String,
-    val subtitle: String = "",
-    val icon: String,
-    val color: Color
-)
-
-// Sample Data
-val sampleTransactions = listOf(
-    TransactionData("Salary Deposit", "Today, 10:30 AM", "+3,500.00", "income"),
-    TransactionData("Grocery Store", "Yesterday, 6:45 PM", "-127.50", "food"),
-    TransactionData("Netflix", "Dec 23, 2024", "-14.99", "entertainment"),
-    TransactionData("Gas Station", "Dec 22, 2024", "-45.20", "transport"),
-    TransactionData("Dividend", "Dec 21, 2024", "+250.00", "investment"),
-    TransactionData("Restaurant", "Dec 20, 2024", "-89.75", "food"),
-    TransactionData("Amazon", "Dec 19, 2024", "-156.30", "shopping"),
-    TransactionData("Freelance", "Dec 18, 2024", "+800.00", "income"),
-    TransactionData("Electric Bill", "Dec 17, 2024", "-78.90", "utilities"),
-    TransactionData("Coffee", "Dec 16, 2024", "-12.45", "food"),
-    TransactionData("Transfer", "Dec 15, 2024", "-200.00", "transfer"),
-    TransactionData("Refund", "Dec 14, 2024", "+45.99", "refund")
-)
-
-val sampleAccounts = listOf(
-    AccountData("Current Account", "Primary checking", "4,256.78"),
-    AccountData("Savings Account", "High-yield savings", "12,450.00"),
-    AccountData("Investment", "Portfolio", "28,975.50"),
-    AccountData("Credit Card", "Monthly expenses", "-1,234.56"),
-    AccountData("Business", "Operations", "5,678.90"),
-    AccountData("Emergency", "Reserves", "8,500.00")
-)
-
-fun getProfileMenuItems(): List<ProfileMenuItem> = listOf(
-    ProfileMenuItem("Personal Information", "Name, email, phone", "👤", Color(0xFF6B46C1)),
-    ProfileMenuItem("Account Preferences", "Language, currency", "⚙", Color(0xFF059669)),
-    ProfileMenuItem("Privacy Settings", "Data usage, permissions", "🔒", Color(0xFFEA580C)),
-    ProfileMenuItem("Notification Settings", "Alerts and updates", "🔔", Color(0xFFDC2626)),
-    ProfileMenuItem("Linked Devices", "Manage your devices", "📱", Color(0xFF7C2D12)),
-    ProfileMenuItem("Backup & Sync", "Data backup options", "☁", Color(0xFF4F46E5))
-)
-
-
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            AppTheme {
-                TwoLayerNavigationApp()
-            }
-        }
-    }
-}
-
-@Composable
-fun AppTheme(content: @Composable () -> Unit) {
-    val colorScheme = if (isSystemInDarkTheme()) {
-        darkColorScheme(primary = Color(0xFF6B46C1))
-    } else {
-        lightColorScheme(primary = Color(0xFF6B46C1))
-    }
-    MaterialTheme(colorScheme = colorScheme, content = content)
-}
-
+// File 5: MainApp.kt
 @Composable
 fun TwoLayerNavigationApp() {
-    val pagerState = rememberPagerState(
-        initialPage = PageIndex.HOME,
-        pageCount = { 3 }
-    )
-
-    val appState = AppState(
-        currentPage = pagerState.currentPage,
-        isSwipeEnabled = true,
-        pagerState = pagerState
-    )
-
-    // Provide AppState at the top level for all pages
-    CompositionLocalProvider(LocalAppState provides appState) {
-        // Main HorizontalPager that contains entire app pages
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize(),
-            // Optimize for smooth scrolling - only load adjacent pages
-            beyondViewportPageCount = 1,
-            // Add subtle page spacing for better visual separation
-            pageSpacing = 0.dp,
-            // Ensure pages fill the entire screen
-            pageSize = PageSize.Fill,
-            // Keep default fling behavior for smooth snapping
-            flingBehavior = PagerDefaults.flingBehavior(state = pagerState),
-            // Allow users to scroll between pages
-            userScrollEnabled = true,
-            // Provide stable keys for better performance
-            key = { page ->
-                when (page) {
-                    PageIndex.INSIGHTS -> "insights"
-                    PageIndex.HOME -> "home"
-                    PageIndex.PROFILE -> "profile"
-                    else -> page
-                }
-            }
-        ) { pageIndex ->
-            when (pageIndex) {
-                PageIndex.INSIGHTS -> FullScreenInsightsPage()
-                PageIndex.HOME -> BankingHomePage(appState)
-                PageIndex.PROFILE -> FullScreenProfilePage()
-            }
-        }
-    }
-}
-
-@Composable
-fun BankingHomePage(appState: AppState) {
     val configuration = LocalConfiguration.current
     val screenHeight = with(LocalDensity.current) { configuration.screenHeightDp.dp.toPx() }
     val scrollState = rememberScrollState()
@@ -478,222 +420,6 @@ fun BankingHomePage(appState: AppState) {
 }
 
 @Composable
-fun FullScreenInsightsPage() {
-    val scrollState = rememberScrollState()
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
-        // Background Msa3ed for consistency
-        // Msa3edScreen(showCloseButton = false, onClose = {})
-
-        // Full screen insights content
-        Box(
-            modifier = Modifier
-                .fillMaxSize().padding(horizontal = 10.dp)
-                .padding(top = 90.dp)
-                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                .background(Color.Transparent)
-        ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                FullScreenTopBar(title = "Financial Insights", showBackToHome = true)
-
-                TransparentTwoPartLayout(
-                    scrollState = scrollState,
-                    topContent = {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                "Financial Health",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = Color.Gray
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                "Excellent",
-                                style = MaterialTheme.typography.displayMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.Green
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            repeat(3) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        "Metric ${it + 1}",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = Color.Gray
-                                    )
-                                    Text(
-                                        "${(it + 1) * 25}%",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.Black
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
-                        }
-                    },
-                    bottomContent = {
-                        Column {
-                            Text(
-                                "Advanced Analytics",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.Black
-                            )
-
-                            repeat(15) {
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Column {
-                                        Text(
-                                            "Analysis ${it + 1}",
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                        Text(
-                                            "Deep insights",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = Color.Gray
-                                        )
-                                    }
-                                    Text(
-                                        "${(it + 1) * 150}.00 KWD",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.Black
-                                    )
-                                }
-                            }
-                        }
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun FullScreenProfilePage() {
-    val listState = rememberLazyListState()
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
-        // Background Msa3ed for consistency
-        //Msa3edScreen(showCloseButton = false, onClose = {})
-
-        // Full screen profile content
-        Box(
-            modifier = Modifier
-                .fillMaxSize().padding(horizontal = 10.dp)
-                .padding(top = 90.dp)
-                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                .background(Color(0xFFF8F9FA))
-        ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                FullScreenTopBar(title = "User Profile", showBackToHome = true)
-
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xFFF8F9FA)),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    item { UserProfileCard() }
-                    item { QuickActionsRow() }
-                    item {
-                        Text(
-                            "Advanced Settings",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black
-                        )
-                    }
-                    items(getProfileMenuItems()) { menuItem ->
-                        ProfileMenuCard(menuItem)
-                    }
-                    item { SecuritySection() }
-                    item { SupportSection() }
-                    item { Spacer(modifier = Modifier.height(100.dp)) }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun FullScreenTopBar(title: String, showBackToHome: Boolean = false) {
-    val appState = LocalAppState.current
-    val scope = rememberCoroutineScope()
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-        ) {
-            if (showBackToHome) {
-                IconButton(
-                    onClick = {
-                        scope.launch {
-                            appState.pagerState.animateScrollToPage(PageIndex.HOME)
-                        }
-                    },
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .size(40.dp)
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back to Home",
-                        tint = Color.Black
-                    )
-                }
-            }
-
-            Row(
-                modifier = Modifier.align(Alignment.Center),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("🇰🇼", style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-            }
-        }
-    }
-}
-
-@Composable
 fun Msa3edScreen(showCloseButton: Boolean, onClose: () -> Unit) {
     Box(
         modifier = Modifier
@@ -761,6 +487,7 @@ fun ActionButton(text: String) {
     }
 }
 
+// File 6: NavigationHost.kt
 @Composable
 fun NavigationHost(
     onDismiss: () -> Unit,
@@ -771,16 +498,36 @@ fun NavigationHost(
     val navController = rememberNavController()
     var currentEvent by remember { mutableStateOf<NavigationEvent?>(null) }
     var currentTopBarEvent by remember { mutableStateOf<TopBarEvent?>(null) }
+    var currentPagerPage by remember { mutableIntStateOf(PageIndex.HOME) }
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    val scope = rememberCoroutineScope()
 
     val screenConfig = when (currentRoute) {
-        Routes.HOME -> ScreenConfiguration(
-            theme = ScreenTheme.TRANSPARENT,
-            hasBackButton = false,
-            title = "KD Banking",
-            showRightIcon = true,
-            rightIcon = "♥"
-        )
+        Routes.HOME -> {
+            when (currentPagerPage) {
+                PageIndex.INSIGHTS -> ScreenConfiguration(
+                    theme = ScreenTheme.TRANSPARENT,
+                    hasBackButton = true,
+                    title = "Insights",
+                    showRightIcon = false,
+                    rightIcon = ""
+                )
+                PageIndex.PROFILE -> ScreenConfiguration(
+                    theme = ScreenTheme.LIGHT_GRAY,
+                    hasBackButton = true,
+                    title = "Profile",
+                    showRightIcon = false,
+                    rightIcon = ""
+                )
+                else -> ScreenConfiguration(
+                    theme = ScreenTheme.TRANSPARENT,
+                    hasBackButton = false,
+                    title = "KD Banking",
+                    showRightIcon = true,
+                    rightIcon = "♥"
+                )
+            }
+        }
 
         Routes.TRANSACTIONS -> ScreenConfiguration(
             theme = ScreenTheme.WHITE,
@@ -845,16 +592,29 @@ fun NavigationHost(
         onTriggerEvent = { event -> currentTopBarEvent = event }
     )
 
+    val pagerScreenState = PagerScreenState(
+        currentPage = currentPagerPage,
+        onPageChange = { page -> currentPagerPage = page },
+        onBackToHome = {
+            scope.launch {
+                currentPagerPage = PageIndex.HOME
+            }
+        }
+    )
+
     CompositionLocalProvider(
         LocalNavigationState provides navigationState,
-        LocalTopBarState provides topBarState
+        LocalTopBarState provides topBarState,
+        LocalPagerScreenState provides pagerScreenState
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             TopNavigationBar()
 
             Box(modifier = Modifier.weight(1f)) {
                 NavHost(navController = navController, startDestination = Routes.HOME) {
-                    composable(Routes.HOME) { HomeScreen(scrollState) }
+                    composable(Routes.HOME) {
+                        HomeScreenWithPager(scrollState, listState)
+                    }
                     composable(Routes.TRANSACTIONS) { TransactionsScreen(listState = listState) }
                     composable(Routes.ACCOUNTS) { AccountsScreen(listState = listState) }
                     composable(Routes.INSIGHTS) { InsightsScreen(scrollState = scrollState) }
@@ -871,6 +631,7 @@ fun NavigationHost(
 fun TopNavigationBar() {
     val navigationState = LocalNavigationState.current
     val topBarState = LocalTopBarState.current
+    val pagerScreenState = LocalPagerScreenState.current
     val config = navigationState.screenConfig
 
     Column(
@@ -885,7 +646,13 @@ fun TopNavigationBar() {
         ) {
             if (config.hasBackButton) {
                 IconButton(
-                    onClick = { navigationState.onNavigate(NavigationEvent.Back) },
+                    onClick = {
+                        if (pagerScreenState != null && pagerScreenState.currentPage != PageIndex.HOME) {
+                            pagerScreenState.onBackToHome()
+                        } else {
+                            navigationState.onNavigate(NavigationEvent.Back)
+                        }
+                    },
                     modifier = Modifier
                         .align(Alignment.CenterStart)
                         .size(40.dp)
@@ -915,7 +682,7 @@ fun TopNavigationBar() {
                 )
             }
 
-            if (config.showRightIcon) {
+            if (config.showRightIcon && config.rightIcon.isNotEmpty()) {
                 Box(modifier = Modifier.align(Alignment.CenterEnd)) {
                     IconButton(
                         onClick = { topBarState.onTriggerEvent(TopBarEvent.RightIconClicked) }
@@ -962,86 +729,84 @@ fun BottomNavigationBar() {
         NavigationBarItem(
             icon = { Text("🔍") },
             label = { Text("Insights", color = Color.Black) },
-            selected = config.title == "Insights",
+            selected = config.title == "Insights" && config.hasBackButton,
             onClick = { navigationState.onNavigate(NavigationEvent.Insights) }
         )
         NavigationBarItem(
             icon = { Text("⋯") },
             label = { Text("Profile", color = Color.Black) },
-            selected = config.title == "Profile",
+            selected = config.title == "Profile" && config.hasBackButton,
             onClick = { navigationState.onNavigate(NavigationEvent.Profile) }
         )
     }
 }
 
+// File 7: HomeScreenWithPager.kt
 @Composable
-fun TransparentTwoPartLayout(
-    scrollState: ScrollState,
-    topContent: @Composable () -> Unit,
-    bottomContent: @Composable () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-    ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                topContent()
+fun HomeScreenWithPager(scrollState: ScrollState, listState: LazyListState) {
+    val pagerState = rememberPagerState(
+        initialPage = PageIndex.HOME,
+        pageCount = { 3 }
+    )
+    val pagerScreenState = LocalPagerScreenState.current
+    val scope = rememberCoroutineScope()
+
+    // Handle pager page changes
+    LaunchedEffect(pagerState.currentPage) {
+        pagerScreenState?.onPageChange?.invoke(pagerState.currentPage)
+    }
+
+    // Listen for back navigation from top bar
+    LaunchedEffect(pagerScreenState?.currentPage) {
+        if (pagerScreenState?.currentPage == PageIndex.HOME && pagerState.currentPage != PageIndex.HOME) {
+            scope.launch {
+                pagerState.animateScrollToPage(PageIndex.HOME)
             }
         }
+    }
 
-        Spacer(modifier = Modifier.height(3.dp))
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
-                bottomContent()
+    HorizontalPager(
+        state = pagerState,
+        modifier = Modifier.fillMaxSize(),
+        beyondViewportPageCount = 1,
+        pageSpacing = 0.dp,
+        pageSize = PageSize.Fill,
+        flingBehavior = PagerDefaults.flingBehavior(state = pagerState),
+        userScrollEnabled = true,
+        key = { page ->
+            when (page) {
+                PageIndex.INSIGHTS -> "insights"
+                PageIndex.HOME -> "home"
+                PageIndex.PROFILE -> "profile"
+                else -> page
             }
+        }
+    ) { pageIndex ->
+        when (pageIndex) {
+            PageIndex.INSIGHTS -> FullScreenInsightsPage()
+            PageIndex.HOME -> BankingHomePage(scrollState, listState)
+            PageIndex.PROFILE -> FullScreenProfilePage()
         }
     }
 }
 
-// All Screen Implementations
-
 @Composable
-fun HomeScreen(scrollState: ScrollState) {
+fun BankingHomePage(scrollState: ScrollState, listState: LazyListState) {
     val navigationState = LocalNavigationState.current
     val topBarState = LocalTopBarState.current
 
-    // Handle navigation events
     LaunchedEffect(navigationState.currentEvent) {
         navigationState.currentEvent?.let { event ->
-            println("HomeScreen received navigation event: ${event::class.simpleName}")
             navigationState.onEventHandled()
         }
     }
 
-    // Handle top bar events with clean extensions
     topBarState.onRightIconClick {
-        println("Heart icon clicked in HomeScreen!")
-        // Handle heart functionality - maybe favorites, liked transactions, etc.
+        // Handle heart functionality
     }
 
     topBarState.onTitleClick {
-        println("Home title clicked! Scrolling to top...")
-        // Scroll to top functionality could go here if needed
+        // Scroll to top functionality
     }
 
     TransparentTwoPartLayout(
@@ -1068,7 +833,6 @@ fun HomeScreen(scrollState: ScrollState) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text("KWD", style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
 
-                // Duplicate content for scrolling demo
                 repeat(3) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
@@ -1125,21 +889,200 @@ fun HomeScreen(scrollState: ScrollState) {
 }
 
 @Composable
+fun FullScreenInsightsPage() {
+    val scrollState = rememberScrollState()
+
+    TransparentTwoPartLayout(
+        scrollState = scrollState,
+        topContent = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    "Financial Health",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.Gray
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "Excellent",
+                    style = MaterialTheme.typography.displayMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Green
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                repeat(3) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            "Metric ${it + 1}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray
+                        )
+                        Text(
+                            "${(it + 1) * 25}%",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+        },
+        bottomContent = {
+            Column {
+                Text(
+                    "Spending Analysis",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+
+                repeat(15) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                "Category ${it + 1}",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                "This month",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray
+                            )
+                        }
+                        Text(
+                            "${(it + 1) * 150}.00 KWD",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+                    }
+                }
+            }
+        }
+    )
+}
+
+@Composable
+fun FullScreenProfilePage() {
+    val listState = rememberLazyListState()
+
+    LazyColumn(
+        state = listState,
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF8F9FA)),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            ProfileHeader()
+        }
+
+        item {
+            UserProfileCard()
+        }
+
+        item {
+            QuickActionsRow()
+        }
+
+        item {
+            Text(
+                "Settings & Preferences",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+        }
+
+        items(getProfileMenuItems()) { menuItem ->
+            ProfileMenuCard(menuItem)
+        }
+
+        item {
+            SecuritySection()
+        }
+
+        item {
+            SupportSection()
+        }
+
+        item { Spacer(modifier = Modifier.height(100.dp)) }
+    }
+}
+
+@Composable
+fun TransparentTwoPartLayout(
+    scrollState: ScrollState,
+    topContent: @Composable () -> Unit,
+    bottomContent: @Composable () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                topContent()
+            }
+        }
+
+        Spacer(modifier = Modifier.height(3.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                bottomContent()
+            }
+        }
+    }
+}
+
+// File 8: Screens.kt
+@Composable
 fun InsightsScreen(scrollState: ScrollState) {
     val navigationState = LocalNavigationState.current
     val topBarState = LocalTopBarState.current
 
-    // Handle navigation events
     LaunchedEffect(navigationState.currentEvent) {
         navigationState.currentEvent?.let { event ->
-            println("InsightsScreen received navigation event: ${event::class.simpleName}")
             navigationState.onEventHandled()
         }
     }
 
-    // Handle top bar events with clean extensions
     topBarState.onTitleClick {
-        println("Insights title clicked! Refreshing data...")
         // Handle refresh or scroll to top
     }
 
@@ -1236,17 +1179,13 @@ fun TransactionsScreen(listState: LazyListState) {
     var isRefreshing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    // Handle navigation events
     LaunchedEffect(navigationState.currentEvent) {
         navigationState.currentEvent?.let { event ->
-            println("TransactionsScreen received navigation event: ${event::class.simpleName}")
             navigationState.onEventHandled()
         }
     }
 
-    // Handle top bar events
     topBarState.onTitleClick {
-        println("Transactions title clicked! Scrolling to top...")
         scope.launch { listState.animateScrollToItem(0) }
     }
 
@@ -1270,25 +1209,7 @@ fun TransactionsScreen(listState: LazyListState) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            "All Transactions",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = Color.Black,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            "Complete transaction history",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.Gray
-                        )
-                    }
-                }
+                TransactionsHeader()
             }
 
             items(sampleTransactions) { transaction ->
@@ -1306,17 +1227,13 @@ fun AccountsScreen(listState: LazyListState) {
     val topBarState = LocalTopBarState.current
     val scope = rememberCoroutineScope()
 
-    // Handle navigation events
     LaunchedEffect(navigationState.currentEvent) {
         navigationState.currentEvent?.let { event ->
-            println("AccountsScreen received navigation event: ${event::class.simpleName}")
             navigationState.onEventHandled()
         }
     }
 
-    // Handle top bar events
     topBarState.onTitleClick {
-        println("Accounts title clicked! Scrolling to top...")
         scope.launch { listState.animateScrollToItem(0) }
     }
 
@@ -1367,22 +1284,17 @@ fun ProfileScreen(listState: LazyListState) {
     val topBarState = LocalTopBarState.current
     val scope = rememberCoroutineScope()
 
-    // Handle navigation events
     LaunchedEffect(navigationState.currentEvent) {
         navigationState.currentEvent?.let { event ->
-            println("ProfileScreen received navigation event: ${event::class.simpleName}")
             navigationState.onEventHandled()
         }
     }
 
-    // Handle top bar events with clean extensions
     topBarState.onRightIconClick {
-        println("Search clicked in ProfileScreen!")
-        // Show search functionality, filter users, search settings, etc.
+        // Show search functionality
     }
 
     topBarState.onTitleClick {
-        println("Profile title clicked! Scrolling to top...")
         scope.launch { listState.animateScrollToItem(0) }
     }
 
@@ -1431,7 +1343,24 @@ fun ProfileScreen(listState: LazyListState) {
     }
 }
 
-// Transaction Card Components
+@Composable
+fun TransactionsHeader() {
+    Column {
+        Text(
+            "All Transactions",
+            style = MaterialTheme.typography.headlineMedium,
+            color = Color.Black,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            "Complete transaction history",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray
+        )
+    }
+}
+
+// File 9: Components.kt
 @Composable
 fun CompactTransactionCard(transaction: TransactionData) {
     Row(
@@ -1445,37 +1374,23 @@ fun CompactTransactionCard(transaction: TransactionData) {
             modifier = Modifier.weight(1f),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .background(Color.Gray.copy(alpha = 0.1f), RoundedCornerShape(16.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    when (transaction.type) {
-                        "income" -> "💰"
-                        "food" -> "🍔"
-                        "transport" -> "🚗"
-                        "shopping" -> "🛍"
-                        "utilities" -> "⚡"
-                        "entertainment" -> "🎬"
-                        else -> "💳"
-                    },
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
+            TransactionIcon(
+                type = transaction.type,
+                size = 32.dp,
+                cornerRadius = 16.dp
+            )
 
             Spacer(modifier = Modifier.width(12.dp))
 
             Column {
                 Text(
-                    transaction.title,
+                    text = transaction.title,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
                     color = Color.Black
                 )
                 Text(
-                    transaction.subtitle,
+                    text = transaction.subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
@@ -1483,15 +1398,9 @@ fun CompactTransactionCard(transaction: TransactionData) {
         }
 
         if (transaction.amount.isNotEmpty()) {
-            Text(
-                if (transaction.amount.startsWith("+")) transaction.amount else "-${
-                    transaction.amount.drop(
-                        1
-                    )
-                }",
-                style = MaterialTheme.typography.bodySmall,
-                color = if (transaction.amount.startsWith("+")) Color.Green else Color.Red,
-                fontWeight = FontWeight.Bold
+            TransactionAmount(
+                amount = transaction.amount,
+                textStyle = MaterialTheme.typography.bodySmall
             )
         }
     }
@@ -1513,40 +1422,23 @@ fun RegularTransactionCard(transaction: TransactionData) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(modifier = Modifier.weight(1f)) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(Color.Gray.copy(alpha = 0.1f), RoundedCornerShape(20.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        when (transaction.type) {
-                            "income" -> "💰"
-                            "food" -> "🍔"
-                            "transport" -> "🚗"
-                            "shopping" -> "🛍"
-                            "utilities" -> "⚡"
-                            "entertainment" -> "🎬"
-                            "investment" -> "📈"
-                            "transfer" -> "↗"
-                            "refund" -> "↩"
-                            else -> "💳"
-                        },
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
+                TransactionIcon(
+                    type = transaction.type,
+                    size = 40.dp,
+                    cornerRadius = 20.dp
+                )
 
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Column {
                     Text(
-                        transaction.title,
+                        text = transaction.title,
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.Black,
                         fontWeight = FontWeight.Medium
                     )
                     Text(
-                        transaction.subtitle,
+                        text = transaction.subtitle,
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )
@@ -1554,42 +1446,76 @@ fun RegularTransactionCard(transaction: TransactionData) {
             }
 
             if (transaction.amount.isNotEmpty()) {
-                Text(
-                    if (transaction.amount.startsWith("+")) "${transaction.amount.drop(1)}" else "-${
-                        transaction.amount.drop(
-                            1
-                        )
-                    }",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (transaction.amount.startsWith("+")) Color.Green else Color.Red,
-                    fontWeight = FontWeight.Bold
+                TransactionAmount(
+                    amount = transaction.amount,
+                    textStyle = MaterialTheme.typography.titleMedium
                 )
             }
         }
     }
 }
 
-// Account Screen Components
+@Composable
+private fun TransactionIcon(
+    type: String,
+    size: androidx.compose.ui.unit.Dp,
+    cornerRadius: androidx.compose.ui.unit.Dp
+) {
+    Box(
+        modifier = Modifier
+            .size(size)
+            .background(Color.Gray.copy(alpha = 0.1f), RoundedCornerShape(cornerRadius)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = when (type) {
+                "income" -> "💰"
+                "food" -> "🍔"
+                "transport" -> "🚗"
+                "shopping" -> "🛍"
+                "utilities" -> "⚡"
+                "entertainment" -> "🎬"
+                "investment" -> "📈"
+                "transfer" -> "↗"
+                "refund" -> "↩"
+                else -> "💳"
+            },
+            style = if (size > 35.dp) MaterialTheme.typography.bodyLarge
+            else MaterialTheme.typography.bodySmall
+        )
+    }
+}
+
+@Composable
+private fun TransactionAmount(
+    amount: String,
+    textStyle: androidx.compose.ui.text.TextStyle
+) {
+    val isPositive = amount.startsWith("+")
+    val displayAmount = if (isPositive) amount.drop(1) else "-${amount.drop(1)}"
+
+    Text(
+        text = displayAmount,
+        style = textStyle,
+        color = if (isPositive) Color.Green else Color.Red,
+        fontWeight = FontWeight.Bold
+    )
+}
+
 @Composable
 fun AccountsHeader() {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column {
-            Text(
-                "My Accounts",
-                style = MaterialTheme.typography.headlineMedium,
-                color = Color.Black,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                "Manage all your banking accounts",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
-            )
-        }
+    Column {
+        Text(
+            text = "My Accounts",
+            style = MaterialTheme.typography.headlineMedium,
+            color = Color.Black,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = "Manage all your banking accounts",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray
+        )
     }
 }
 
@@ -1601,26 +1527,28 @@ fun AccountsSummaryCard() {
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(24.dp)
-        ) {
+        Column(modifier = Modifier.padding(24.dp)) {
             Text(
-                "Total Balance",
+                text = "Total Balance",
                 style = MaterialTheme.typography.bodyLarge,
                 color = Color.White.copy(alpha = 0.8f)
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                "55,389.64",
-                style = MaterialTheme.typography.displaySmall,
-                color = Color.White,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                "KWD",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.8f)
-            )
+
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    text = "55,389.64",
+                    style = MaterialTheme.typography.displaySmall,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "KWD",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.8f)
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -1628,28 +1556,24 @@ fun AccountsSummaryCard() {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                SummaryItem("Assets", "63,624.20", true)
-                SummaryItem("Liabilities", "8,234.56", false)
-                SummaryItem("Net Worth", "55,389.64", true)
+                SummaryItem("Assets", "63,624.20")
+                SummaryItem("Liabilities", "8,234.56")
+                SummaryItem("Net Worth", "55,389.64")
             }
         }
     }
 }
 
 @Composable
-fun SummaryItem(
-    title: String,
-    amount: String,
-    isPositive: Boolean
-) {
+private fun SummaryItem(title: String, amount: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            title,
+            text = title,
             style = MaterialTheme.typography.bodySmall,
             color = Color.White.copy(alpha = 0.7f)
         )
         Text(
-            amount,
+            text = amount,
             style = MaterialTheme.typography.titleMedium,
             color = Color.White,
             fontWeight = FontWeight.Bold
@@ -1659,11 +1583,13 @@ fun SummaryItem(
 
 @Composable
 fun EnhancedAccountCard(account: AccountData) {
-    val cardColors = listOf(
-        Color(0xFF4F46E5), Color(0xFF059669), Color(0xFFDC2626),
-        Color(0xFF7C2D12), Color(0xFF6B46C1), Color(0xFFEA580C)
-    )
-    val cardColor = cardColors.random()
+    val cardColors = remember {
+        listOf(
+            Color(0xFF4F46E5), Color(0xFF059669), Color(0xFFDC2626),
+            Color(0xFF7C2D12), Color(0xFF6B46C1), Color(0xFFEA580C)
+        )
+    }
+    val cardColor = remember(account.name) { cardColors.random() }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -1671,94 +1597,95 @@ fun EnhancedAccountCard(account: AccountData) {
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Box(modifier = Modifier
-            .fillMaxWidth()
-            .padding(20.dp)) {
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Column {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = account.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = account.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.8f)
+                    )
+                }
+
+                IconButton(onClick = { }) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "More options",
+                        tint = Color.White
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Column {
+                    Text(
+                        text = "Available Balance",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.7f)
+                    )
+                    Row(verticalAlignment = Alignment.Bottom) {
                         Text(
-                            account.name,
-                            style = MaterialTheme.typography.titleLarge,
+                            text = account.balance,
+                            style = MaterialTheme.typography.headlineSmall,
                             color = Color.White,
                             fontWeight = FontWeight.Bold
                         )
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            account.description,
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = "KWD",
+                            style = MaterialTheme.typography.bodySmall,
                             color = Color.White.copy(alpha = 0.8f)
                         )
                     }
-
-                    IconButton(onClick = { }) {
-                        Icon(
-                            Icons.Default.MoreVert,
-                            contentDescription = "More options",
-                            tint = Color.White
-                        )
-                    }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom
-                ) {
-                    Column {
-                        Text(
-                            "Available Balance",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.7f)
-                        )
-                        Row(verticalAlignment = Alignment.Bottom) {
-                            Text(
-                                if (account.balance.startsWith("-"))
-                                    "-${account.balance.drop(1)}"
-                                else account.balance,
-                                style = MaterialTheme.typography.headlineSmall,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                "KWD",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.8f)
-                            )
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                Color.White.copy(alpha = 0.2f),
-                                RoundedCornerShape(8.dp)
-                            )
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            when {
-                                account.name.contains("Current") -> "CHECKING"
-                                account.name.contains("Savings") -> "SAVINGS"
-                                account.name.contains("Investment") -> "INVESTMENT"
-                                account.name.contains("Credit") -> "CREDIT"
-                                account.name.contains("Business") -> "BUSINESS"
-                                else -> "ACCOUNT"
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
+                AccountTypeChip(accountName = account.name)
             }
         }
+    }
+}
+
+@Composable
+private fun AccountTypeChip(accountName: String) {
+    val accountType = when {
+        accountName.contains("Current", ignoreCase = true) -> "CHECKING"
+        accountName.contains("Savings", ignoreCase = true) -> "SAVINGS"
+        accountName.contains("Investment", ignoreCase = true) -> "INVESTMENT"
+        accountName.contains("Credit", ignoreCase = true) -> "CREDIT"
+        accountName.contains("Business", ignoreCase = true) -> "BUSINESS"
+        else -> "ACCOUNT"
+    }
+
+    Box(
+        modifier = Modifier
+            .background(
+                Color.White.copy(alpha = 0.2f),
+                RoundedCornerShape(8.dp)
+            )
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+    ) {
+        Text(
+            text = accountType,
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.White,
+            fontWeight = FontWeight.Medium
+        )
     }
 }
 
@@ -1785,7 +1712,7 @@ fun AddAccountCard() {
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    Icons.Default.Add,
+                    imageVector = Icons.Default.Add,
                     contentDescription = "Add account",
                     tint = Color(0xFF6B46C1),
                     modifier = Modifier.size(24.dp)
@@ -1795,14 +1722,14 @@ fun AddAccountCard() {
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                "Open New Account",
+                text = "Open New Account",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
             )
 
             Text(
-                "Start your financial journey with us",
+                text = "Start your financial journey with us",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray,
                 textAlign = TextAlign.Center
@@ -1815,7 +1742,7 @@ fun AddAccountCard() {
 fun AccountServicesSection() {
     Column {
         Text(
-            "Account Services",
+            text = "Account Services",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = Color.Black
@@ -1823,25 +1750,18 @@ fun AccountServicesSection() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             items(
-                listOf(
-                    "Transfer Funds",
-                    "Pay Bills",
-                    "Mobile Deposit",
-                    "Statements"
-                )
+                listOf("Transfer Funds", "Pay Bills", "Mobile Deposit", "Statements")
             ) { service ->
-                ServiceCard(service)
+                ServiceCard(service = service)
             }
         }
     }
 }
 
 @Composable
-fun ServiceCard(service: String) {
+private fun ServiceCard(service: String) {
     Card(
         modifier = Modifier
             .width(140.dp)
@@ -1855,7 +1775,7 @@ fun ServiceCard(service: String) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                when (service) {
+                text = when (service) {
                     "Transfer Funds" -> "💸"
                     "Pay Bills" -> "🧾"
                     "Mobile Deposit" -> "📱"
@@ -1868,7 +1788,7 @@ fun ServiceCard(service: String) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                service,
+                text = service,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
                 color = Color.Black,
@@ -1878,27 +1798,20 @@ fun ServiceCard(service: String) {
     }
 }
 
-// Profile Screen Components
 @Composable
 fun ProfileHeader() {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column {
-            Text(
-                "My Profile",
-                style = MaterialTheme.typography.headlineMedium,
-                color = Color.Black,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                "Manage your account settings",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
-            )
-        }
+    Column {
+        Text(
+            text = "My Profile",
+            style = MaterialTheme.typography.headlineMedium,
+            color = Color.Black,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = "Manage your account settings",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray
+        )
     }
 }
 
@@ -1923,7 +1836,7 @@ fun UserProfileCard() {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    "M",
+                    text = "M",
                     style = MaterialTheme.typography.displaySmall,
                     color = Color(0xFF6B46C1),
                     fontWeight = FontWeight.Bold
@@ -1934,28 +1847,31 @@ fun UserProfileCard() {
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    "Mohammed Al-Rashid",
+                    text = "Mohammed Al-Rashid",
                     style = MaterialTheme.typography.titleLarge,
                     color = Color.Black,
                     fontWeight = FontWeight.Bold
                 )
 
                 Text(
-                    "Premium Customer",
+                    text = "Premium Customer",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color(0xFF6B46C1),
                     fontWeight = FontWeight.Medium
                 )
 
                 Text(
-                    "Member since 2019",
+                    text = "Member since 2019",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
             }
 
             IconButton(onClick = { }) {
-                Text("✏", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = "✏",
+                    style = MaterialTheme.typography.titleMedium
+                )
             }
         }
     }
@@ -1963,28 +1879,24 @@ fun UserProfileCard() {
 
 @Composable
 fun QuickActionsRow() {
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        items(
-            listOf(
-                Triple("Edit Profile", "👤", Color(0xFF6B46C1)),
-                Triple("Security", "🔒", Color(0xFF059669)),
-                Triple("Notification", "🔔", Color(0xFFEA580C)),
-                Triple("Help", "❓", Color(0xFFDC2626))
-            )
-        ) { (title, icon, color) ->
-            QuickActionCard(title, icon, color)
+    val quickActions = remember {
+        listOf(
+            Triple("Edit Profile", "👤", Color(0xFF6B46C1)),
+            Triple("Security", "🔒", Color(0xFF059669)),
+            Triple("Notification", "🔔", Color(0xFFEA580C)),
+            Triple("Help", "❓", Color(0xFFDC2626))
+        )
+    }
+
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        items(quickActions) { (title, icon, color) ->
+            QuickActionCard(title = title, icon = icon, color = color)
         }
     }
 }
 
 @Composable
-fun QuickActionCard(
-    title: String,
-    icon: String,
-    color: Color
-) {
+private fun QuickActionCard(title: String, icon: String, color: Color) {
     Card(
         modifier = Modifier
             .width(100.dp)
@@ -2003,13 +1915,16 @@ fun QuickActionCard(
                     .background(color.copy(alpha = 0.1f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text(icon, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = icon,
+                    style = MaterialTheme.typography.titleMedium
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                title,
+                text = title,
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
                 color = Color.Black,
@@ -2036,28 +1951,34 @@ fun ProfileMenuCard(menuItem: ProfileMenuItem) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Box(
                     modifier = Modifier
                         .size(40.dp)
                         .background(menuItem.color.copy(alpha = 0.1f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(menuItem.icon, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        text = menuItem.icon,
+                        style = MaterialTheme.typography.titleMedium
+                    )
                 }
 
                 Spacer(modifier = Modifier.width(16.dp))
 
                 Column {
                     Text(
-                        menuItem.title,
+                        text = menuItem.title,
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
                         color = Color.Black
                     )
                     if (menuItem.subtitle.isNotEmpty()) {
                         Text(
-                            menuItem.subtitle,
+                            text = menuItem.subtitle,
                             style = MaterialTheme.typography.bodySmall,
                             color = Color.Gray
                         )
@@ -2066,7 +1987,7 @@ fun ProfileMenuCard(menuItem: ProfileMenuItem) {
             }
 
             Icon(
-                Icons.AutoMirrored.Filled.ArrowBack,
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Navigate",
                 tint = Color.Gray,
                 modifier = Modifier.size(16.dp)
@@ -2079,7 +2000,7 @@ fun ProfileMenuCard(menuItem: ProfileMenuItem) {
 fun SecuritySection() {
     Column {
         Text(
-            "Security & Privacy",
+            text = "Security & Privacy",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = Color.Black
@@ -2107,7 +2028,7 @@ fun SecuritySection() {
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        "✓",
+                        text = "✓",
                         style = MaterialTheme.typography.titleMedium,
                         color = Color(0xFF059669)
                     )
@@ -2117,13 +2038,13 @@ fun SecuritySection() {
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        "Account Secure",
+                        text = "Account Secure",
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
                         color = Color.Black
                     )
                     Text(
-                        "All security features are active",
+                        text = "All security features are active",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )
@@ -2137,7 +2058,7 @@ fun SecuritySection() {
 fun SupportSection() {
     Column {
         Text(
-            "Support & Help",
+            text = "Support & Help",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = Color.Black
@@ -2156,14 +2077,17 @@ fun SupportSection() {
                     containerColor = Color(0xFF6B46C1)
                 )
             ) {
-                Text("Contact Support")
+                Text(text = "Contact Support")
             }
 
             OutlinedButton(
                 onClick = { },
                 modifier = Modifier.weight(1f)
             ) {
-                Text("FAQ", color = Color(0xFF6B46C1))
+                Text(
+                    text = "FAQ",
+                    color = Color(0xFF6B46C1)
+                )
             }
         }
     }

@@ -33,6 +33,11 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PageSize
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -88,29 +93,16 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            AppTheme {
-                TwoLayerNavigationApp()
-            }
-        }
-    }
+
+
+// Main Page Indices for HorizontalPager
+object PageIndex {
+    const val INSIGHTS = 0
+    const val HOME = 1
+    const val PROFILE = 2
 }
 
-@Composable
-fun AppTheme(content: @Composable () -> Unit) {
-    val colorScheme = if (isSystemInDarkTheme()) {
-        darkColorScheme(primary = Color(0xFF6B46C1))
-    } else {
-        lightColorScheme(primary = Color(0xFF6B46C1))
-    }
-    MaterialTheme(colorScheme = colorScheme, content = content)
-}
-
-// Navigation Events - Only for screen navigation
+// Navigation Events - Only for screen navigation within each page
 sealed class NavigationEvent {
     data object Home : NavigationEvent()
     data object Transactions : NavigationEvent()
@@ -120,6 +112,12 @@ sealed class NavigationEvent {
     data object Back : NavigationEvent()
 }
 
+// Top Bar Events - Separate from navigation
+sealed class TopBarEvent {
+    data object RightIconClicked : TopBarEvent()
+    data object LeftIconClicked : TopBarEvent()
+    data object TitleClicked : TopBarEvent()
+}
 
 // Screen Theme Configuration
 enum class ScreenTheme {
@@ -145,20 +143,18 @@ data class NavigationState(
     val onNavigate: (NavigationEvent) -> Unit = {}
 )
 
-// Top Bar
-// Top Bar Events - Separate from navigation
-sealed class TopBarEvent {
-    data object RightIconClicked : TopBarEvent()
-    data object LeftIconClicked : TopBarEvent()
-    data object TitleClicked : TopBarEvent()
-}
-
-
 // Top Bar State
 data class TopBarState(
     val currentEvent: TopBarEvent? = null,
     val onEventHandled: () -> Unit = {},
     val onTriggerEvent: (TopBarEvent) -> Unit = {}
+)
+
+// Main App State
+data class AppState(
+    val currentPage: Int = PageIndex.HOME,
+    val isSwipeEnabled: Boolean = true,
+    val pagerState: PagerState
 )
 
 // CompositionLocal declarations
@@ -168,6 +164,10 @@ val LocalNavigationState = compositionLocalOf<NavigationState> {
 
 val LocalTopBarState = compositionLocalOf<TopBarState> {
     error("TopBarState not provided")
+}
+
+val LocalAppState = compositionLocalOf<AppState> {
+    error("AppState not provided")
 }
 
 // Top Bar Event Extensions
@@ -284,8 +284,79 @@ fun getProfileMenuItems(): List<ProfileMenuItem> = listOf(
     ProfileMenuItem("Backup & Sync", "Data backup options", "☁", Color(0xFF4F46E5))
 )
 
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            AppTheme {
+                TwoLayerNavigationApp()
+            }
+        }
+    }
+}
+
+@Composable
+fun AppTheme(content: @Composable () -> Unit) {
+    val colorScheme = if (isSystemInDarkTheme()) {
+        darkColorScheme(primary = Color(0xFF6B46C1))
+    } else {
+        lightColorScheme(primary = Color(0xFF6B46C1))
+    }
+    MaterialTheme(colorScheme = colorScheme, content = content)
+}
+
 @Composable
 fun TwoLayerNavigationApp() {
+    val pagerState = rememberPagerState(
+        initialPage = PageIndex.HOME,
+        pageCount = { 3 }
+    )
+
+    val appState = AppState(
+        currentPage = pagerState.currentPage,
+        isSwipeEnabled = true,
+        pagerState = pagerState
+    )
+
+    // Provide AppState at the top level for all pages
+    CompositionLocalProvider(LocalAppState provides appState) {
+        // Main HorizontalPager that contains entire app pages
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize(),
+            // Optimize for smooth scrolling - only load adjacent pages
+            beyondViewportPageCount = 1,
+            // Add subtle page spacing for better visual separation
+            pageSpacing = 0.dp,
+            // Ensure pages fill the entire screen
+            pageSize = PageSize.Fill,
+            // Keep default fling behavior for smooth snapping
+            flingBehavior = PagerDefaults.flingBehavior(state = pagerState),
+            // Allow users to scroll between pages
+            userScrollEnabled = true,
+            // Provide stable keys for better performance
+            key = { page ->
+                when (page) {
+                    PageIndex.INSIGHTS -> "insights"
+                    PageIndex.HOME -> "home"
+                    PageIndex.PROFILE -> "profile"
+                    else -> page
+                }
+            }
+        ) { pageIndex ->
+            when (pageIndex) {
+                PageIndex.INSIGHTS -> FullScreenInsightsPage()
+                PageIndex.HOME -> BankingHomePage(appState)
+                PageIndex.PROFILE -> FullScreenProfilePage()
+            }
+        }
+    }
+}
+
+@Composable
+fun BankingHomePage(appState: AppState) {
     val configuration = LocalConfiguration.current
     val screenHeight = with(LocalDensity.current) { configuration.screenHeightDp.dp.toPx() }
     val scrollState = rememberScrollState()
@@ -402,6 +473,222 @@ fun TwoLayerNavigationApp() {
                 scrollState = scrollState,
                 listState = listState
             )
+        }
+    }
+}
+
+@Composable
+fun FullScreenInsightsPage() {
+    val scrollState = rememberScrollState()
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
+        // Background Msa3ed for consistency
+        // Msa3edScreen(showCloseButton = false, onClose = {})
+
+        // Full screen insights content
+        Box(
+            modifier = Modifier
+                .fillMaxSize().padding(horizontal = 10.dp)
+                .padding(top = 90.dp)
+                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                .background(Color.Transparent)
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                FullScreenTopBar(title = "Financial Insights", showBackToHome = true)
+
+                TransparentTwoPartLayout(
+                    scrollState = scrollState,
+                    topContent = {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                "Financial Health",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.Gray
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                "Excellent",
+                                style = MaterialTheme.typography.displayMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Green
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            repeat(3) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        "Metric ${it + 1}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color.Gray
+                                    )
+                                    Text(
+                                        "${(it + 1) * 25}%",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.Black
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                        }
+                    },
+                    bottomContent = {
+                        Column {
+                            Text(
+                                "Advanced Analytics",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+
+                            repeat(15) {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column {
+                                        Text(
+                                            "Analysis ${it + 1}",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        Text(
+                                            "Deep insights",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color.Gray
+                                        )
+                                    }
+                                    Text(
+                                        "${(it + 1) * 150}.00 KWD",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.Black
+                                    )
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun FullScreenProfilePage() {
+    val listState = rememberLazyListState()
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
+        // Background Msa3ed for consistency
+        //Msa3edScreen(showCloseButton = false, onClose = {})
+
+        // Full screen profile content
+        Box(
+            modifier = Modifier
+                .fillMaxSize().padding(horizontal = 10.dp)
+                .padding(top = 90.dp)
+                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                .background(Color(0xFFF8F9FA))
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                FullScreenTopBar(title = "User Profile", showBackToHome = true)
+
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFFF8F9FA)),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    item { UserProfileCard() }
+                    item { QuickActionsRow() }
+                    item {
+                        Text(
+                            "Advanced Settings",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+                    }
+                    items(getProfileMenuItems()) { menuItem ->
+                        ProfileMenuCard(menuItem)
+                    }
+                    item { SecuritySection() }
+                    item { SupportSection() }
+                    item { Spacer(modifier = Modifier.height(100.dp)) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FullScreenTopBar(title: String, showBackToHome: Boolean = false) {
+    val appState = LocalAppState.current
+    val scope = rememberCoroutineScope()
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+            if (showBackToHome) {
+                IconButton(
+                    onClick = {
+                        scope.launch {
+                            appState.pagerState.animateScrollToPage(PageIndex.HOME)
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .size(40.dp)
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back to Home",
+                        tint = Color.Black
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.align(Alignment.Center),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("🇰🇼", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+            }
         }
     }
 }
@@ -731,7 +1018,7 @@ fun TransparentTwoPartLayout(
     }
 }
 
-// File 2: Screens.kt - All Screen Implementations
+// All Screen Implementations
 
 @Composable
 fun HomeScreen(scrollState: ScrollState) {
@@ -748,12 +1035,12 @@ fun HomeScreen(scrollState: ScrollState) {
 
     // Handle top bar events with clean extensions
     topBarState.onRightIconClick {
-        println("Heart icon clicked in HomeScreen! ❤️${topBarState.currentEvent}")
+        println("Heart icon clicked in HomeScreen!")
         // Handle heart functionality - maybe favorites, liked transactions, etc.
     }
 
     topBarState.onTitleClick {
-        println("Home title clicked! Scrolling to top...❤${topBarState.currentEvent}")
+        println("Home title clicked! Scrolling to top...")
         // Scroll to top functionality could go here if needed
     }
 
@@ -1143,8 +1430,6 @@ fun ProfileScreen(listState: LazyListState) {
         item { Spacer(modifier = Modifier.height(100.dp)) }
     }
 }
-
-// File 3: Components.kt - All UI Components
 
 // Transaction Card Components
 @Composable

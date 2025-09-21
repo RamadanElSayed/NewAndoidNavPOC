@@ -1,3 +1,4 @@
+// File 1: Imports.kt
 package com.ramadan.newandoidnavpoc
 
 import android.os.Bundle
@@ -94,6 +95,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 
+// File 2: Models.kt - Data Classes, Enums, and Constants
 
 // Main Page Indices for HorizontalPager
 object PageIndex {
@@ -170,6 +172,72 @@ val LocalAppState = compositionLocalOf<AppState> {
     error("AppState not provided")
 }
 
+// Routes
+object Routes {
+    const val HOME = "home"
+    const val TRANSACTIONS = "transactions"
+    const val ACCOUNTS = "accounts"
+    const val INSIGHTS = "insights"
+    const val PROFILE = "profile"
+}
+
+// Data Models
+data class TransactionData(
+    val title: String,
+    val subtitle: String,
+    val amount: String = "",
+    val type: String = "default"
+)
+
+data class AccountData(
+    val name: String,
+    val description: String,
+    val balance: String
+)
+
+data class ProfileMenuItem(
+    val title: String,
+    val subtitle: String = "",
+    val icon: String,
+    val color: Color
+)
+
+// File 3: SampleData.kt - Sample Data and Extensions
+
+// Sample Data
+val sampleTransactions = listOf(
+    TransactionData("Salary Deposit", "Today, 10:30 AM", "+3,500.00", "income"),
+    TransactionData("Grocery Store", "Yesterday, 6:45 PM", "-127.50", "food"),
+    TransactionData("Netflix", "Dec 23, 2024", "-14.99", "entertainment"),
+    TransactionData("Gas Station", "Dec 22, 2024", "-45.20", "transport"),
+    TransactionData("Dividend", "Dec 21, 2024", "+250.00", "investment"),
+    TransactionData("Restaurant", "Dec 20, 2024", "-89.75", "food"),
+    TransactionData("Amazon", "Dec 19, 2024", "-156.30", "shopping"),
+    TransactionData("Freelance", "Dec 18, 2024", "+800.00", "income"),
+    TransactionData("Electric Bill", "Dec 17, 2024", "-78.90", "utilities"),
+    TransactionData("Coffee", "Dec 16, 2024", "-12.45", "food"),
+    TransactionData("Transfer", "Dec 15, 2024", "-200.00", "transfer"),
+    TransactionData("Refund", "Dec 14, 2024", "+45.99", "refund")
+)
+
+val sampleAccounts = listOf(
+    AccountData("Current Account", "Primary checking", "4,256.78"),
+    AccountData("Savings Account", "High-yield savings", "12,450.00"),
+    AccountData("Investment", "Portfolio", "28,975.50"),
+    AccountData("Credit Card", "Monthly expenses", "-1,234.56"),
+    AccountData("Business", "Operations", "5,678.90"),
+    AccountData("Emergency", "Reserves", "8,500.00")
+)
+
+fun getProfileMenuItems(): List<ProfileMenuItem> = listOf(
+    ProfileMenuItem("Personal Information", "Name, email, phone", "👤", Color(0xFF6B46C1)),
+    ProfileMenuItem("Account Preferences", "Language, currency", "⚙", Color(0xFF059669)),
+    ProfileMenuItem("Privacy Settings", "Data usage, permissions", "🔒", Color(0xFFEA580C)),
+    ProfileMenuItem("Notification Settings", "Alerts and updates", "🔔", Color(0xFFDC2626)),
+    ProfileMenuItem("Linked Devices", "Manage your devices", "📱", Color(0xFF7C2D12)),
+    ProfileMenuItem("Backup & Sync", "Data backup options", "☁", Color(0xFF4F46E5))
+)
+
 // Top Bar Event Extensions
 @Composable
 fun TopBarState.onRightIconClick(action: () -> Unit) {
@@ -220,70 +288,7 @@ fun TopBarState.handleEvents(
     }
 }
 
-// Routes
-object Routes {
-    const val HOME = "home"
-    const val TRANSACTIONS = "transactions"
-    const val ACCOUNTS = "accounts"
-    const val INSIGHTS = "insights"
-    const val PROFILE = "profile"
-}
-
-// Data Models
-data class TransactionData(
-    val title: String,
-    val subtitle: String,
-    val amount: String = "",
-    val type: String = "default"
-)
-
-data class AccountData(
-    val name: String,
-    val description: String,
-    val balance: String
-)
-
-data class ProfileMenuItem(
-    val title: String,
-    val subtitle: String = "",
-    val icon: String,
-    val color: Color
-)
-
-// Sample Data
-val sampleTransactions = listOf(
-    TransactionData("Salary Deposit", "Today, 10:30 AM", "+3,500.00", "income"),
-    TransactionData("Grocery Store", "Yesterday, 6:45 PM", "-127.50", "food"),
-    TransactionData("Netflix", "Dec 23, 2024", "-14.99", "entertainment"),
-    TransactionData("Gas Station", "Dec 22, 2024", "-45.20", "transport"),
-    TransactionData("Dividend", "Dec 21, 2024", "+250.00", "investment"),
-    TransactionData("Restaurant", "Dec 20, 2024", "-89.75", "food"),
-    TransactionData("Amazon", "Dec 19, 2024", "-156.30", "shopping"),
-    TransactionData("Freelance", "Dec 18, 2024", "+800.00", "income"),
-    TransactionData("Electric Bill", "Dec 17, 2024", "-78.90", "utilities"),
-    TransactionData("Coffee", "Dec 16, 2024", "-12.45", "food"),
-    TransactionData("Transfer", "Dec 15, 2024", "-200.00", "transfer"),
-    TransactionData("Refund", "Dec 14, 2024", "+45.99", "refund")
-)
-
-val sampleAccounts = listOf(
-    AccountData("Current Account", "Primary checking", "4,256.78"),
-    AccountData("Savings Account", "High-yield savings", "12,450.00"),
-    AccountData("Investment", "Portfolio", "28,975.50"),
-    AccountData("Credit Card", "Monthly expenses", "-1,234.56"),
-    AccountData("Business", "Operations", "5,678.90"),
-    AccountData("Emergency", "Reserves", "8,500.00")
-)
-
-fun getProfileMenuItems(): List<ProfileMenuItem> = listOf(
-    ProfileMenuItem("Personal Information", "Name, email, phone", "👤", Color(0xFF6B46C1)),
-    ProfileMenuItem("Account Preferences", "Language, currency", "⚙", Color(0xFF059669)),
-    ProfileMenuItem("Privacy Settings", "Data usage, permissions", "🔒", Color(0xFFEA580C)),
-    ProfileMenuItem("Notification Settings", "Alerts and updates", "🔔", Color(0xFFDC2626)),
-    ProfileMenuItem("Linked Devices", "Manage your devices", "📱", Color(0xFF7C2D12)),
-    ProfileMenuItem("Backup & Sync", "Data backup options", "☁", Color(0xFF4F46E5))
-)
-
+// File 4: MainActivity.kt - Main Activity and Theme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -314,9 +319,12 @@ fun TwoLayerNavigationApp() {
         pageCount = { 3 }
     )
 
+    // Track if we're on home route to enable/disable pager scrolling
+    var isOnHomeRoute by remember { mutableStateOf(true) }
+
     val appState = AppState(
         currentPage = pagerState.currentPage,
-        isSwipeEnabled = true,
+        isSwipeEnabled = isOnHomeRoute,
         pagerState = pagerState
     )
 
@@ -334,8 +342,8 @@ fun TwoLayerNavigationApp() {
             pageSize = PageSize.Fill,
             // Keep default fling behavior for smooth snapping
             flingBehavior = PagerDefaults.flingBehavior(state = pagerState),
-            // Allow users to scroll between pages
-            userScrollEnabled = true,
+            // Enable scrolling only when on Home tab in bottom navigation
+            userScrollEnabled = isOnHomeRoute,
             // Provide stable keys for better performance
             key = { page ->
                 when (page) {
@@ -348,15 +356,19 @@ fun TwoLayerNavigationApp() {
         ) { pageIndex ->
             when (pageIndex) {
                 PageIndex.INSIGHTS -> FullScreenInsightsPage()
-                PageIndex.HOME -> BankingHomePage(appState)
+                PageIndex.HOME -> BankingHomePage(appState) { route ->
+                    isOnHomeRoute = route == Routes.HOME
+                }
                 PageIndex.PROFILE -> FullScreenProfilePage()
             }
         }
     }
 }
 
+// File 5: MainPages.kt - Main Page Components
+
 @Composable
-fun BankingHomePage(appState: AppState) {
+fun BankingHomePage(appState: AppState, onRouteChange: (String) -> Unit) {
     val configuration = LocalConfiguration.current
     val screenHeight = with(LocalDensity.current) { configuration.screenHeightDp.dp.toPx() }
     val scrollState = rememberScrollState()
@@ -470,6 +482,7 @@ fun BankingHomePage(appState: AppState) {
                 onBackgroundChange = { background ->
                     containerBackground = background
                 },
+                onRouteChange = onRouteChange,
                 scrollState = scrollState,
                 listState = listState
             )
@@ -486,9 +499,6 @@ fun FullScreenInsightsPage() {
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        // Background Msa3ed for consistency
-        // Msa3edScreen(showCloseButton = false, onClose = {})
-
         // Full screen insights content
         Box(
             modifier = Modifier
@@ -597,9 +607,6 @@ fun FullScreenProfilePage() {
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        // Background Msa3ed for consistency
-        //Msa3edScreen(showCloseButton = false, onClose = {})
-
         // Full screen profile content
         Box(
             modifier = Modifier
@@ -641,130 +648,13 @@ fun FullScreenProfilePage() {
     }
 }
 
-@Composable
-fun FullScreenTopBar(title: String, showBackToHome: Boolean = false) {
-    val appState = LocalAppState.current
-    val scope = rememberCoroutineScope()
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-        ) {
-            if (showBackToHome) {
-                IconButton(
-                    onClick = {
-                        scope.launch {
-                            appState.pagerState.animateScrollToPage(PageIndex.HOME)
-                        }
-                    },
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .size(40.dp)
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back to Home",
-                        tint = Color.Black
-                    )
-                }
-            }
-
-            Row(
-                modifier = Modifier.align(Alignment.Center),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("🇰🇼", style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun Msa3edScreen(showCloseButton: Boolean, onClose: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF0C0032),
-                        Color(0xFFE6004C),
-                        Color(0xFF2D0B55),
-                        Color(0xFF2D0B55),
-                        Color(0xFFE6004C)
-                    )
-                )
-            )
-            .systemBarsPadding()
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                "Hey Mohammed",
-                style = MaterialTheme.typography.headlineMedium,
-                color = Color.White
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                "How can I help?",
-                style = MaterialTheme.typography.titleLarge,
-                color = Color(0xFFDB2777)
-            )
-            Spacer(modifier = Modifier.height(48.dp))
-
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                ActionButton("See my transactions")
-                ActionButton("View spending insights")
-            }
-        }
-
-        if (showCloseButton) {
-            IconButton(
-                onClick = onClose,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp)
-                    .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(50))
-            ) {
-                Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
-            }
-        }
-    }
-}
-
-@Composable
-fun ActionButton(text: String) {
-    Button(
-        onClick = { },
-        modifier = Modifier.size(width = 280.dp, height = 56.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.2f)),
-        shape = RoundedCornerShape(28.dp)
-    ) {
-        Text(text, color = Color.White)
-    }
-}
+// File 6: Navigation.kt - Navigation Components
 
 @Composable
 fun NavigationHost(
     onDismiss: () -> Unit,
     onBackgroundChange: (Color) -> Unit,
+    onRouteChange: (String) -> Unit,
     scrollState: ScrollState,
     listState: LazyListState
 ) {
@@ -772,6 +662,13 @@ fun NavigationHost(
     var currentEvent by remember { mutableStateOf<NavigationEvent?>(null) }
     var currentTopBarEvent by remember { mutableStateOf<TopBarEvent?>(null) }
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+
+    // Notify parent about route changes
+    LaunchedEffect(currentRoute) {
+        currentRoute?.let { route ->
+            onRouteChange(route)
+        }
+    }
 
     val screenConfig = when (currentRoute) {
         Routes.HOME -> ScreenConfiguration(
@@ -975,6 +872,128 @@ fun BottomNavigationBar() {
 }
 
 @Composable
+fun FullScreenTopBar(title: String, showBackToHome: Boolean = false) {
+    val appState = LocalAppState.current
+    val scope = rememberCoroutineScope()
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+            if (showBackToHome) {
+                IconButton(
+                    onClick = {
+                        scope.launch {
+                            appState.pagerState.animateScrollToPage(PageIndex.HOME)
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .size(40.dp)
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back to Home",
+                        tint = Color.Black
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.align(Alignment.Center),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("🇰🇼", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+            }
+        }
+    }
+}
+
+// File 7: CommonComponents.kt - Shared UI Components
+
+@Composable
+fun Msa3edScreen(showCloseButton: Boolean, onClose: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF0C0032),
+                        Color(0xFFE6004C),
+                        Color(0xFF2D0B55),
+                        Color(0xFF2D0B55),
+                        Color(0xFFE6004C)
+                    )
+                )
+            )
+            .systemBarsPadding()
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                "Hey Mohammed",
+                style = MaterialTheme.typography.headlineMedium,
+                color = Color.White
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                "How can I help?",
+                style = MaterialTheme.typography.titleLarge,
+                color = Color(0xFFDB2777)
+            )
+            Spacer(modifier = Modifier.height(48.dp))
+
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                ActionButton("See my transactions")
+                ActionButton("View spending insights")
+            }
+        }
+
+        if (showCloseButton) {
+            IconButton(
+                onClick = onClose,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+                    .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(50))
+            ) {
+                Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+            }
+        }
+    }
+}
+
+@Composable
+fun ActionButton(text: String) {
+    Button(
+        onClick = { },
+        modifier = Modifier.size(width = 280.dp, height = 56.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.2f)),
+        shape = RoundedCornerShape(28.dp)
+    ) {
+        Text(text, color = Color.White)
+    }
+}
+
+@Composable
 fun TransparentTwoPartLayout(
     scrollState: ScrollState,
     topContent: @Composable () -> Unit,
@@ -1018,7 +1037,144 @@ fun TransparentTwoPartLayout(
     }
 }
 
-// All Screen Implementations
+@Composable
+fun CompactTransactionCard(transaction: TransactionData) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .background(Color.Gray.copy(alpha = 0.1f), RoundedCornerShape(16.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    when (transaction.type) {
+                        "income" -> "💰"
+                        "food" -> "🍔"
+                        "transport" -> "🚗"
+                        "shopping" -> "🛍"
+                        "utilities" -> "⚡"
+                        "entertainment" -> "🎬"
+                        else -> "💳"
+                    },
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column {
+                Text(
+                    transaction.title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.Black
+                )
+                Text(
+                    transaction.subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+            }
+        }
+
+        if (transaction.amount.isNotEmpty()) {
+            Text(
+                if (transaction.amount.startsWith("+")) transaction.amount else "-${
+                    transaction.amount.drop(
+                        1
+                    )
+                }",
+                style = MaterialTheme.typography.bodySmall,
+                color = if (transaction.amount.startsWith("+")) Color.Green else Color.Red,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+fun RegularTransactionCard(transaction: TransactionData) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(modifier = Modifier.weight(1f)) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(Color.Gray.copy(alpha = 0.1f), RoundedCornerShape(20.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        when (transaction.type) {
+                            "income" -> "💰"
+                            "food" -> "🍔"
+                            "transport" -> "🚗"
+                            "shopping" -> "🛍"
+                            "utilities" -> "⚡"
+                            "entertainment" -> "🎬"
+                            "investment" -> "📈"
+                            "transfer" -> "↗"
+                            "refund" -> "↩"
+                            else -> "💳"
+                        },
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column {
+                    Text(
+                        transaction.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.Black,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        transaction.subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                }
+            }
+
+            if (transaction.amount.isNotEmpty()) {
+                Text(
+                    if (transaction.amount.startsWith("+")) "${transaction.amount.drop(1)}" else "-${
+                        transaction.amount.drop(
+                            1
+                        )
+                    }",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (transaction.amount.startsWith("+")) Color.Green else Color.Red,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+// File 8: Screens.kt - Individual Screen Implementations
 
 @Composable
 fun HomeScreen(scrollState: ScrollState) {
@@ -1428,144 +1584,6 @@ fun ProfileScreen(listState: LazyListState) {
         }
 
         item { Spacer(modifier = Modifier.height(100.dp)) }
-    }
-}
-
-// Transaction Card Components
-@Composable
-fun CompactTransactionCard(transaction: TransactionData) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(
-            modifier = Modifier.weight(1f),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .background(Color.Gray.copy(alpha = 0.1f), RoundedCornerShape(16.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    when (transaction.type) {
-                        "income" -> "💰"
-                        "food" -> "🍔"
-                        "transport" -> "🚗"
-                        "shopping" -> "🛍"
-                        "utilities" -> "⚡"
-                        "entertainment" -> "🎬"
-                        else -> "💳"
-                    },
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column {
-                Text(
-                    transaction.title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.Black
-                )
-                Text(
-                    transaction.subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
-                )
-            }
-        }
-
-        if (transaction.amount.isNotEmpty()) {
-            Text(
-                if (transaction.amount.startsWith("+")) transaction.amount else "-${
-                    transaction.amount.drop(
-                        1
-                    )
-                }",
-                style = MaterialTheme.typography.bodySmall,
-                color = if (transaction.amount.startsWith("+")) Color.Green else Color.Red,
-                fontWeight = FontWeight.Bold
-            )
-        }
-    }
-}
-
-@Composable
-fun RegularTransactionCard(transaction: TransactionData) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(modifier = Modifier.weight(1f)) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(Color.Gray.copy(alpha = 0.1f), RoundedCornerShape(20.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        when (transaction.type) {
-                            "income" -> "💰"
-                            "food" -> "🍔"
-                            "transport" -> "🚗"
-                            "shopping" -> "🛍"
-                            "utilities" -> "⚡"
-                            "entertainment" -> "🎬"
-                            "investment" -> "📈"
-                            "transfer" -> "↗"
-                            "refund" -> "↩"
-                            else -> "💳"
-                        },
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column {
-                    Text(
-                        transaction.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color.Black,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        transaction.subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
-                    )
-                }
-            }
-
-            if (transaction.amount.isNotEmpty()) {
-                Text(
-                    if (transaction.amount.startsWith("+")) "${transaction.amount.drop(1)}" else "-${
-                        transaction.amount.drop(
-                            1
-                        )
-                    }",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (transaction.amount.startsWith("+")) Color.Green else Color.Red,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
     }
 }
 
